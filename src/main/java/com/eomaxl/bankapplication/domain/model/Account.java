@@ -120,7 +120,7 @@ public class Account {
 
     public void addTransaction(Transaction transaction) {
         transactions.add(transaction);
-        transactions.setAccount(this);
+        transaction.setAccount(this);
     }
 
 }
