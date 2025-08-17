@@ -1,4 +1,4 @@
-package com.eomaxl.bankapplication.repository.custom;
+package com.eomaxl.bankapplication.repository;
 
 import com.eomaxl.bankapplication.domain.model.Transaction;
 import com.eomaxl.bankapplication.domain.model.TransactionType;

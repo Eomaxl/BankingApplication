@@ -1,4 +1,4 @@
-package com.eomaxl.bankapplication.repository.custom;
+package com.eomaxl.bankapplication.repository;
 
 import com.eomaxl.bankapplication.domain.model.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
