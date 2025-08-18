@@ -1,4 +1,4 @@
-package com.eomaxl.bankapplication.service;
+package com.eomaxl.bankapplication.service.impl;
 
 import com.eomaxl.bankapplication.domain.model.Transaction;
 import com.eomaxl.bankapplication.repository.TransactionRepository;
