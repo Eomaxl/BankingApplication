@@ -12,9 +12,9 @@ import java.util.Optional;
 @Repository
 public interface AccountHolderRepository extends JpaRepository<AccountHolder, Long> {
 
-    Optional<AccountHolder> findByAccountNumber(String accountNumber);
+    Optional<AccountHolder> findByCustomerId(String customerId);
 
-    boolean existsByAccountNumber(String customerId);
+    boolean existsByCustomerId(String customerId);
 
     @Query("SELECT ah FROM AccountHolder ah WHERE ah.person.email = :email")
     Optional<AccountHolder> findByPersonEmail(@Param("email") String email);

@@ -1,9 +1,11 @@
 package com.eomaxl.bankapplication.service;
 
+import com.eomaxl.bankapplication.domain.model.Person;
+
 import java.util.List;
 import java.util.Optional;
 
-public interface Person {
+public interface PersonService {
 
     Person createPerson(Person person);
 
@@ -15,7 +17,7 @@ public interface Person {
 
     List<Person> findAll();
 
-    Person updatePerson(Person person);
+    Person updatePerson(Long id, Person updatedPerson);
 
     void deletePerson(Long id);
 
