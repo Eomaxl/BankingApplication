@@ -5,7 +5,9 @@ import com.eomaxl.bankapplication.domain.exception.BankingException;
 import com.eomaxl.bankapplication.domain.exception.InsufficientFundsException;
 import com.eomaxl.bankapplication.domain.model.*;
 import com.eomaxl.bankapplication.repository.AccountRepository;
+import com.eomaxl.bankapplication.service.IAccountHolderService;
 import com.eomaxl.bankapplication.service.IAccountService;
+import com.eomaxl.bankapplication.service.IBankService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,8 +31,8 @@ import java.util.UUID;
 public class AccountServiceImpl implements IAccountService {
 
     private final AccountRepository accountRepository;
-    private final BankService bankService;
-    private final AccountHolderService accountHolderService;
+    private final IBankService bankService;
+    private final IAccountHolderService accountHolderService;
 
     @Transactional
     public Account createAccount(Account account) {
