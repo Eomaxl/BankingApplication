@@ -1,6 +1,7 @@
 package com.eomaxl.bankapplication.repository;
 
 import com.eomaxl.bankapplication.domain.model.Transaction;
+import com.eomaxl.bankapplication.domain.model.TransactionStatus;
 import com.eomaxl.bankapplication.domain.model.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +18,9 @@ import java.util.Optional;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    Optional<Transaction> findByTransaction(String transactionId);
+    Optional<Transaction> findByTransactionId(String transactionId);
+
+    boolean existsByTransactionId(String transactionId);
 
     @Query("SELECT t FROM Transaction  t WHERE t.account.id = :accountId ORDER BY t.transactionDate DESC")
     Page<Transaction> findByAccountId(@Param("accountId") Long accountId, Pageable pageable);
@@ -27,6 +30,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT t FROM Transaction  t WHERE t.transactionType = :transactionType")
     List<Transaction> findByTransactionType(@Param("transactionType") TransactionType transactionType);
+
+    @Query("SELECT t FROM Transaction t WHERE t.status = :status")
+    List<Transaction> findByStatus(@Param("status") TransactionStatus status);
 
     @Query("SELECT t FROM Transaction t WHERE t.transactionDate BETWEEN :startDate AND :endDate")
     List<Transaction> findByTransactionDateBetween(@Param("startDate") LocalDateTime startDate,

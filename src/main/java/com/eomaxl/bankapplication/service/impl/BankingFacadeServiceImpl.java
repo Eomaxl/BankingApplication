@@ -81,7 +81,7 @@ public class BankingFacadeServiceImpl implements IBankingFacadeService {
 
         } catch (Exception e) {
             log.error("Failed to onboard customer: {}", person.getEmail(), e);
-            throw new BankingException("Customer onboarding failed: " + e.getMessage(), "ONBOARDING_FAILED", e);
+            throw new BankingException("Customer onboarding failed: " + e.getMessage(), "ONBOARDING_FAILED");
         }
     }
 
