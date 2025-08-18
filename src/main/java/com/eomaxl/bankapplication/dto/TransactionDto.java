@@ -1,4 +1,4 @@
-package com.eomaxl.bankapplication.dto.response;
+package com.eomaxl.bankapplication.dto;
 
 
 import com.eomaxl.bankapplication.domain.model.TransactionStatus;

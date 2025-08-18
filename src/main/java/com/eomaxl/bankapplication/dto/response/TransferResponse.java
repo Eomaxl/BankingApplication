@@ -1,5 +1,6 @@
 package com.eomaxl.bankapplication.dto.response;
 
+import com.eomaxl.bankapplication.dto.TransactionDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
