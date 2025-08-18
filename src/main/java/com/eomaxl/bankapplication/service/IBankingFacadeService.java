@@ -3,6 +3,7 @@ package com.eomaxl.bankapplication.service;
 import com.eomaxl.bankapplication.domain.model.Account;
 import com.eomaxl.bankapplication.domain.model.AccountType;
 import com.eomaxl.bankapplication.domain.model.Person;
+import com.eomaxl.bankapplication.service.impl.BankingFacadeServiceImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
@@ -31,7 +32,7 @@ public interface IBankingFacadeService {
      * @return Customer profile with accounts and total balance
      * @throws com.eomaxl.bankapplication.domain.exception.BankingException if customer not found
      */
-    BankingFacadeService.CustomerProfile getCustomerProfile(String customerId);
+    BankingFacadeServiceImpl.CustomerProfile getCustomerProfile(String customerId);
 
     /**
      * Performs money transfer with complete transaction logging and error handling
@@ -41,7 +42,7 @@ public interface IBankingFacadeService {
      * @param description Transfer description
      * @return Transfer result with success status and transaction details
      */
-    BankingFacadeService.TransferResult performTransfer(String fromAccountNumber, String toAccountNumber,
+    BankingFacadeServiceImpl.TransferResult performTransfer(String fromAccountNumber, String toAccountNumber,
                                                         BigDecimal amount, String description);
 
     /**
@@ -53,7 +54,7 @@ public interface IBankingFacadeService {
      * @return Account statement with transaction summary
      * @throws com.eomaxl.bankapplication.domain.exception.AccountNotFoundException if account not found
      */
-    BankingFacadeService.AccountStatement getAccountStatement(String accountNumber, LocalDateTime startDate,
+    BankingFacadeServiceImpl.AccountStatement getAccountStatement(String accountNumber, LocalDateTime startDate,
                                                               LocalDateTime endDate, Pageable pageable);
 
     /**
@@ -71,5 +72,5 @@ public interface IBankingFacadeService {
      * @return Bank summary with account counts, total balance, and averages
      * @throws com.eomaxl.bankapplication.domain.exception.BankingException if bank not found
      */
-    BankingFacadeService.BankSummary getBankSummary(String bankCode);
+    BankingFacadeServiceImpl.BankSummary getBankSummary(String bankCode);
 }
