@@ -3,7 +3,7 @@ package com.eomaxl.bankapplication.service.impl;
 import com.eomaxl.bankapplication.domain.exception.BankingException;
 import com.eomaxl.bankapplication.domain.model.Person;
 import com.eomaxl.bankapplication.repository.PersonRepository;
-import com.eomaxl.bankapplication.service.PersonService;
+import com.eomaxl.bankapplication.service.IPersonService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class PersonServiceImpl implements PersonService {
+public class IPersonServiceImpl implements IPersonService {
     private PersonRepository personRepository;
 
     @Transactional

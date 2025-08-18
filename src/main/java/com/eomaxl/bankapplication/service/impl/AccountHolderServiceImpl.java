@@ -4,8 +4,8 @@ import com.eomaxl.bankapplication.domain.exception.BankingException;
 import com.eomaxl.bankapplication.domain.model.AccountHolder;
 import com.eomaxl.bankapplication.domain.model.Person;
 import com.eomaxl.bankapplication.repository.AccountHolderRepository;
-import com.eomaxl.bankapplication.service.AccountHolderService;
-import com.eomaxl.bankapplication.service.PersonService;
+import com.eomaxl.bankapplication.service.IAccountHolderService;
+import com.eomaxl.bankapplication.service.IPersonService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +19,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class AccountHolderServiceImpl implements AccountHolderService {
+public class AccountHolderServiceImpl implements IAccountHolderService {
     private final AccountHolderRepository accountHolderRepository;
-    private final PersonService personService;
+    private final IPersonService personService;
 
     @Transactional
     public AccountHolder createAccountHolder(Person person) {
