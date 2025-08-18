@@ -16,7 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class IPersonServiceImpl implements IPersonService {
+public class PersonServiceImpl implements IPersonService {
     private PersonRepository personRepository;
 
     @Transactional
