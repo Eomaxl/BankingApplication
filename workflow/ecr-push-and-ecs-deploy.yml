@@ -1,0 +1,71 @@
+name: Build & Push to ECR (and Deploy to ECS)
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-east-1            # e.g., ap-south-1
+  ECR_REPOSITORY: banking-system    # your ECR repo name
+  IMAGE_TAG: ${{ github.sha }}      # or use ${{ github.run_number }} or a semver
+  CLUSTER_NAME: dev-banking-cluster # <-- set if deploying
+  SERVICE_NAME: banking-service-dev # <-- set if deploying
+  CONTAINER_NAME: banking-app       # <-- container name from your task def
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for OIDC
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::655593806969:role/GitHubECRPushAndEcsDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        run: |
+          ECR_URI=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
+          docker build -t "$ECR_URI" .
+          docker push "$ECR_URI"
+
+      # --------- OPTIONAL: ECS DEPLOY STEPS (pick ONE approach below) ---------
+
+      # Approach A: Force new deployment with existing task definition (uses same tag name but new image digest)
+      # Requires your task definition to reference the image tag you use above (e.g., latest or a fixed tag)
+      - name: Force new ECS deployment (same task def, pull new image)
+        if: ${{ always() }}
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.CLUSTER_NAME }}" \
+            --service "${{ env.SERVICE_NAME }}" \
+            --force-new-deployment \
+            --region "${{ env.AWS_REGION }}"
+
+      # Approach B: Register a new task definition revision with the new image, then update service
+      # Use this if your task definition JSON is in the repo and you want image pinning per revision.
+      # - name: Render task definition (replace image)
+      #   id: taskdef
+      #   uses: aws-actions/amazon-ecs-render-task-definition@v1
+      #   with:
+      #     task-definition: infrastructure/ecs/taskdef.json
+      #     container-name: ${{ env.CONTAINER_NAME }}
+      #     image: ${{ env.ECR_URI }}
+      #
+      # - name: Deploy Amazon ECS task definition
+      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      #   with:
+      #     task-definition: ${{ steps.taskdef.outputs.task-definition }}
+      #     service: ${{ env.SERVICE_NAME }}
+      #     cluster: ${{ env.CLUSTER_NAME }}
+      #     wait-for-service-stability: true
