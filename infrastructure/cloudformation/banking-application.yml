@@ -1,0 +1,281 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Banking System Application - ECS Service, Task Definition, and Auto Scaling'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+
+  ImageURI:
+    Type: String
+    Description: Docker image URI in ECR
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: Database password
+
+  AdminUsername:
+    Type: String
+    Default: admin
+    Description: Admin username
+
+  AdminPassword:
+    Type: String
+    NoEcho: true
+    Description: Admin password
+
+  JWTSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT secret key
+
+Resources:
+  # ECS Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub banking-app-${Environment}
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub banking-ecs-execution-role-arn-${Environment}
+      TaskRoleArn:
+        Fn::ImportValue: !Sub banking-ecs-task-role-arn-${Environment}
+      ContainerDefinitions:
+        - Name: banking-app
+          Image: !Ref ImageURI
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          Environment:
+            - Name: SPRING_PROFILES_ACTIVE
+              Value: aws
+            - Name: RDS_ENDPOINT
+              Value: !Sub
+                - jdbc:postgresql://${Endpoint}:5432/bankingdb
+                - Endpoint:
+                    Fn::ImportValue: !Sub banking-rds-endpoint-${Environment}
+            - Name: RDS_USERNAME
+              Value: banking_user
+            - Name: RDS_PASSWORD
+              Value: !Ref DBPassword
+            - Name: ADMIN_USERNAME
+              Value: !Ref AdminUsername
+            - Name: ADMIN_PASSWORD
+              Value: !Ref AdminPassword
+            - Name: JWT_SECRET
+              Value: !Ref JWTSecret
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: S3_BUCKET_NAME
+              Value: !Sub banking-documents-${Environment}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Sub /ecs/banking-app-${Environment}
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:8080/actuator/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub banking-service-${Environment}
+      Cluster:
+        Fn::ImportValue: !Sub banking-ecs-cluster-${Environment}
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub banking-ecs-sg-${Environment}
+          Subnets:
+            - Fn::ImportValue: !Sub banking-private-subnet-1-id-${Environment}
+            - Fn::ImportValue: !Sub banking-private-subnet-2-id-${Environment}
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: banking-app
+          ContainerPort: 8080
+          TargetGroupArn:
+            Fn::ImportValue: !Sub banking-target-group-arn-${Environment}
+      HealthCheckGracePeriodSeconds: 120
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      Tags:
+        - Key: Name
+          Value: !Sub banking-service-${Environment}
+
+  # Auto Scaling Target
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 10
+      MinCapacity: 2
+      ResourceId: !Sub service/${Environment}-banking-cluster/banking-service-${Environment}
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  # Auto Scaling Policy - CPU
+  AutoScalingPolicyCPU:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub banking-cpu-scaling-${Environment}
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: 70.0
+        ScaleOutCooldown: 300
+        ScaleInCooldown: 300
+
+  # Auto Scaling Policy - Memory
+  AutoScalingPolicyMemory:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub banking-memory-scaling-${Environment}
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageMemoryUtilization
+        TargetValue: 80.0
+        ScaleOutCooldown: 300
+        ScaleInCooldown: 300
+
+  # CloudWatch Alarms
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub banking-high-cpu-${Environment}
+      AlarmDescription: High CPU utilization alarm
+      MetricName: CPUUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ServiceName
+          Value: !Sub banking-service-${Environment}
+        - Name: ClusterName
+          Value:
+            Fn::ImportValue: !Sub banking-ecs-cluster-${Environment}
+
+  HighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub banking-high-memory-${Environment}
+      AlarmDescription: High memory utilization alarm
+      MetricName: MemoryUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ServiceName
+          Value: !Sub banking-service-${Environment}
+        - Name: ClusterName
+          Value:
+            Fn::ImportValue: !Sub banking-ecs-cluster-${Environment}
+
+  # S3 Bucket for Documents
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub banking-documents-${Environment}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+
+  # SQS Queue for Async Processing
+  ProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub banking-queue-${Environment}
+      VisibilityTimeoutSeconds: 300
+      MessageRetentionPeriod: 1209600 # 14 days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  # Dead Letter Queue
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub banking-dlq-${Environment}
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  # SNS Topic for Notifications
+  NotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub banking-notifications-${Environment}
+      DisplayName: Banking System Notifications
+
+Outputs:
+  ServiceName:
+    Description: ECS Service Name
+    Value: !Ref ECSService
+    Export:
+      Name: !Sub banking-service-name-${Environment}
+
+  TaskDefinitionArn:
+    Description: Task Definition ARN
+    Value: !Ref TaskDefinition
+    Export:
+      Name: !Sub banking-task-definition-arn-${Environment}
+
+  S3BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref DocumentsBucket
+    Export:
+      Name: !Sub banking-s3-bucket-${Environment}
+
+  SQSQueueURL:
+    Description: SQS Queue URL
+    Value: !Ref ProcessingQueue
+    Export:
+      Name: !Sub banking-sqs-queue-url-${Environment}
+
+  SNSTopicArn:
+    Description: SNS Topic ARN
+    Value: !Ref NotificationsTopic
+    Export:
+      Name: !Sub banking-sns-topic-arn-${Environment}
