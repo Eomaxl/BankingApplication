@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: banking-system
+
+  datasource:
+    url: ${RDS_ENDPOINT:jdbc:postgresql://banking-db.cluster-xyz.us-east-1.rds.amazonaws.com:5432/bankingdb}
+    username: ${RDS_USERNAME:banking_user}
+    password: ${RDS_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  security:
+    user:
+      name: ${ADMIN_USERNAME}
+      password: ${ADMIN_PASSWORD}
+      roles: ADMIN
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+  http2:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      cloudwatch:
+        enabled: true
+        namespace: Banking/Application
+        step: 60s
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+logging:
+  level:
+    com.banking: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.springframework.cloud.aws: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId}] [%thread] %-5level %logger{36} - %msg%n"
+
+# AWS Configuration
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:us-east-1}
+    credentials:
+      instance-profile: true
+    stack:
+      auto: false
+
+# Custom application properties
+banking:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: 86400000 # 24 hours
+  aws:
+    s3:
+      bucket: ${S3_BUCKET_NAME:banking-documents}
+    sqs:
+      queue-url: ${SQS_QUEUE_URL}
+    sns:
+      topic-arn: ${SNS_TOPIC_ARN}
