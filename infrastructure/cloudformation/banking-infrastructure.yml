@@ -401,3 +401,9 @@ Outputs:
     Value: !GetAtt ECSTaskRole.Arn
     Export:
       Name: !Sub banking-ecs-task-role-arn-${Environment}
+
+  ECSSecurityGroupId:
+    Description: ECS Security Group ID
+    Value: !Ref ECSSecurityGroup
+    Export:
+      Name: !Sub banking-ecs-sg-${Environment}

@@ -105,9 +105,9 @@ Resources:
           SecurityGroups:
             - Fn::ImportValue: !Sub banking-ecs-sg-${Environment}
           Subnets:
-            - Fn::ImportValue: !Sub banking-private-subnet-1-id-${Environment}
-            - Fn::ImportValue: !Sub banking-private-subnet-2-id-${Environment}
-          AssignPublicIp: DISABLED
+            - Fn::ImportValue: !Sub banking-public-subnet-1-id-${Environment}
+            - Fn::ImportValue: !Sub banking-public-subnet-2-id-${Environment}
+          AssignPublicIp: ENABLED
       LoadBalancers:
         - ContainerName: banking-app
           ContainerPort: 8080

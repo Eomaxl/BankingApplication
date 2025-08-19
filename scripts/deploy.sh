@@ -5,10 +5,12 @@ set -e
 
 # Configuration
 ENVIRONMENT=${1:-dev}
-AWS_REGION=
-AWS_ACCOUNT_ID=
-ECR_REPOSITORY=
-IMAGE_TAG=
+AWS_REGION=${2:-us-east-1}
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_REPOSITORY="banking-system"
+IMAGE_TAG=${3:-latest}
+
+DB_PASSWORD=$(openssl rand -base64 32)
 
 echo " Starting deployment for environment: $ENVIRONMENT"
 echo " Region: $AWS_REGION"
@@ -81,7 +83,7 @@ aws cloudformation deploy \
     --stack-name banking-infrastructure-$ENVIRONMENT \
     --parameter-overrides \
         Environment=$ENVIRONMENT \
-        DBPassword=$(openssl rand -base64 32) \
+        DBPassword=$DB_PASSWORD \
     --capabilities CAPABILITY_NAMED_IAM \
     --region $AWS_REGION
 
@@ -104,7 +106,7 @@ aws cloudformation deploy \
     --parameter-overrides \
         Environment=$ENVIRONMENT \
         ImageURI=$ECR_URI \
-        DBPassword=$(aws secretsmanager get-secret-value --secret-id banking-db-password-$ENVIRONMENT --query SecretString --output text 2>/dev/null || echo "defaultpassword") \
+        DBPassword=$DB_PASSWORD \
         AdminUsername=admin \
         AdminPassword=$(openssl rand -base64 32) \
         JWTSecret=$(openssl rand -base64 64) \

@@ -16,10 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-DataJpaTest
-@ActiveProfiles("test")
-@DisplayName("Account Repository Tests")
-class AccountRepositoryTest {
+public class AccountRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
