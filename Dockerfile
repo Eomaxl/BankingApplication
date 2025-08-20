@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM openjdk:21-jdk as builder
+FROM openjdk:17-jdk-slim as builder
 
 # Set working directory
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src src
 RUN ./mvnw clean package -DskipTests
 
 # Production stage
-FROM openjdk:21-jdk
+FROM openjdk:17-jre-slim
 
 # Create non-root user for security
 RUN groupadd -r banking && useradd -r -g banking banking
