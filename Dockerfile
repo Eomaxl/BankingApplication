@@ -1,5 +1,6 @@
 # Multi-stage build for optimized production image
-FROM openjdk:17-jdk-slim as builder
+#FROM openjdk:17-jdk-slim as builder
+FROM public.ecr.aws/docker/library/eclipse-temurin:17-jdk-jammy AS builder
 
 # Set working directory
 WORKDIR /app
@@ -10,7 +11,8 @@ COPY .mvn .mvn
 COPY pom.xml .
 
 # Download dependencies (cached layer)
-RUN ./mvnw dependency:go-offline -B
+#RUN ./mvnw dependency:go-offline -B
+RUN chmod +x mvnw && ./mvnw -v && ./mvnw dependency:go-offline -B
 
 # Copy source code
 COPY src src
@@ -19,7 +21,7 @@ COPY src src
 RUN ./mvnw clean package -DskipTests
 
 # Production stage
-FROM openjdk:17-jre-slim
+FROM public.ecr.aws/docker/library/eclipse-temurin:17-jre-jammy
 
 # Create non-root user for security
 RUN groupadd -r banking && useradd -r -g banking banking
