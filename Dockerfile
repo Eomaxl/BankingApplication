@@ -52,9 +52,17 @@
 # ---- builder: Maven + JDK ----
 FROM public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
+
+# Copy build files
 COPY pom.xml .
-COPY src src
-RUN mvn -v && mvn -B -DskipTests=true clean package
+COPY src/ ./src
+
+# Build and create a stable artifact name: target/app.jar
+# (filters out original/plain/sources/javadoc jars)
+RUN mvn -v && mvn -B -DskipTests=true clean package && \
+    JAR="$(ls -1 target/*.jar | grep -vE 'original|plain|sources|javadoc' | head -n1)" && \
+    cp "$JAR" target/app.jar && \
+    ls -l target/
 
 # ---- runtime: JRE only ----
 FROM public.ecr.aws/docker/library/eclipse-temurin:17-jre-jammy
@@ -67,12 +75,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 RUN groupadd -r banking && useradd -r -g banking banking
 
 WORKDIR /app
-COPY --from=builder /app/target/banking-system-*.jar /app/app.jar
+
+# Copy the single, known JAR built above
+COPY --from=builder /app/target/app.jar /app/app.jar
+
+# Permissions & user
 RUN chown -R banking:banking /app
 USER banking
 
 EXPOSE 8080
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 ENTRYPOINT ["java","-jar","/app/app.jar"]
+
