@@ -3,7 +3,7 @@
 # Banking System AWS Deployment Script
 # Customized for your existing AWS infrastructure
 
-set -e
+set -euo pipefail
 
 # Configuration - Update these with your actual values
 AWS_REGION="us-east-1"
@@ -46,12 +46,32 @@ print_status "AWS CLI is configured"
 
 # Step 2: Build the application
 print_status "Building Spring Boot application..."
-mvn clean package -DskipTests
+mvn clean install -DskipTests
+
+# mvn clean package -DskipTests
+#if [ -x "./mvnw" ]; then
+#  ./mvnw -B -DskipTests clean package
+#elif command -v mvn.cmd >/dev/null 2>&1; then
+#  mvn.cmd -B -DskipTests clean package
+#elif command -v mvn >/dev/null 2>&1; then
+#  mvn -B -DskipTests clean package
+#else
+#  echo "No local Maven found; skipping local build (Docker will build the app)..."
+#fi
+#
 
 if [ ! -f "target/banking-system-1.0.0.jar" ]; then
     print_error "JAR file not found. Build failed."
     exit 1
 fi
+
+# --- pick the built jar (optional; Docker build may not need this) ---
+ARTIFACT_JAR="$(ls -1 "${PROJECT_ROOT}/target"/*.jar 2>/dev/null | grep -vE 'original|sources|javadoc|plain' | head -n1)"
+[ -f "${ARTIFACT_JAR}" ] && echo "Built JAR: ${ARTIFACT_JAR}"
+
+# --- Docker build must use the project root as context ---
+# assumes Dockerfile is at PROJECT_ROOT/Dockerfile
+docker build -f "${PROJECT_ROOT}/Dockerfile" -t "${IMAGE_URI}" "${PROJECT_ROOT}"
 
 print_status "Application built successfully"
 

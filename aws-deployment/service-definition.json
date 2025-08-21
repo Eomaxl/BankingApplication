@@ -7,19 +7,19 @@
   "networkConfiguration": {
     "awsvpcConfiguration": {
       "subnets": [
-        "subnet-xxxxxxxxx",
-        "subnet-yyyyyyyyy"
+        "subnet-06e3c2ed3ba238b90",
+        "subnet-0c53ff0bdf1ece475"
       ],
       "securityGroups": [
-        "sg-xxxxxxxxx"
+        "sg-0b9faa0ae8490a3d0"
       ],
       "assignPublicIp": "ENABLED"
     }
   },
   "loadBalancers": [
     {
-      "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:655593806999:targetgroup/banking-tg/xxxxxxxxx",
-      "containerName": "banking-app",
+      "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:655593806969:targetgroup/Bank-system-target-group/f53a6379bd456c75",
+      "containerName": "banking-system",
       "containerPort": 8080
     }
   ],
