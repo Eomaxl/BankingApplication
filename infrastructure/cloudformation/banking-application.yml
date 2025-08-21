@@ -62,9 +62,9 @@ Resources:
                 - Endpoint:
                     Fn::ImportValue: !Sub banking-rds-endpoint-${Environment}
             - Name: RDS_USERNAME
-              Value: banking_user
+              Value: postgres
             - Name: RDS_PASSWORD
-              Value: !Ref DBPassword
+              Value: Welcome2Bank#
             - Name: ADMIN_USERNAME
               Value: !Ref AdminUsername
             - Name: ADMIN_PASSWORD

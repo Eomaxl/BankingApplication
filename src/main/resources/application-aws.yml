@@ -3,7 +3,7 @@ spring:
     name: banking-system
 
   datasource:
-    url: ${RDS_ENDPOINT:jdbc:postgresql://banking-db.cluster-xyz.us-east-1.rds.amazonaws.com:5432/bankingdb}
+    url: ${RDS_ENDPOINT:jdbc:postgresql://database-1.cgrmu26cmkbf.us-east-1.rds.amazonaws.com:5432/bankingdb}
     username: ${RDS_USERNAME:banking_user}
     password: ${RDS_PASSWORD}
     driver-class-name: org.postgresql.Driver
